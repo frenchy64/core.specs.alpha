@@ -76,11 +76,14 @@
     (s/cat :params (s/* ::binding-form)
            :var-params (s/? (s/cat :ampersand #{'&} :var-form ::binding-form)))))
 
+(s/def ::fn-body
+  (s/alt :prepost+body (s/cat :prepost map?
+                              :body (s/+ any?))
+         :body (s/* any?)))
+
 (s/def ::params+body
   (s/cat :params ::param-list
-         :body (s/alt :prepost+body (s/cat :prepost map?
-                                           :body (s/+ any?))
-                      :body (s/* any?))))
+         :body ::fn-body))
 
 (s/def ::defn-args
   (s/cat :fn-name simple-symbol?
@@ -223,6 +226,15 @@
          :attr-map (s/? map?)
          :ns-clauses ::ns-clauses))
 
+(s/def ::reify-args
+  (s/cat :options (s/keys*)
+         :specs (s/* (s/cat :name symbol?
+                            :methods (s/* (s/spec
+                                            (s/cat :method-name simple-symbol?
+                                                   :params (s/and vector?
+                                                                  (s/cat :params (s/+ ::binding-form)))
+                                                   :body ::fn-body)))))))
+
 (s/fdef clojure.core/ns
   :args ::ns-form)
 
@@ -243,3 +255,6 @@
                :exclude (s/cat :op (quotable #{:exclude}) :arg (quotable ::exclude))
                :only (s/cat :op (quotable #{:only}) :arg (quotable ::only))
                :rename (s/cat :op (quotable #{:rename}) :arg (quotable ::rename)))))
+
+(s/fdef clojure.core/reify
+  :args ::reify-args)
